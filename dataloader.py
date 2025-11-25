@@ -1,5 +1,4 @@
 import os
-from PIL import Image
 import matplotlib.pyplot as plt
 import pandas as pd
 import torch
@@ -31,6 +30,13 @@ de_transforms = v2.Compose([
 
 
 class DatasetWildfire(Dataset):
+    """Transforms Wildfire dataframe into a PyTorch Dataset.
+    Label "fire" is mapped to 1, "nofire" to 0.
+        
+
+    Args:
+        Dataset (_type_): _description_
+    """
     def __init__(self, dataframe: pd.DataFrame, transforms):
         """
         Args:
@@ -45,7 +51,7 @@ class DatasetWildfire(Dataset):
         """
         self.dataframe = dataframe
         self.transforms = transforms
-        self.class_to_idx = {"fire": 0, "nofire": 1}
+        self.class_to_idx = {"fire": 1, "nofire": 0}
 
     def __len__(self):
         return self.dataframe.shape[0]
@@ -56,7 +62,6 @@ class DatasetWildfire(Dataset):
         img_tensor = decode_image(img_file)
         label_str = self.dataframe.iloc[idx]['Class']
         label = self.class_to_idx[label_str]  # convert to integer
-
 
         img_transformed = self.transforms(img_tensor)
 
