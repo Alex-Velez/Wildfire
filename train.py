@@ -1,14 +1,14 @@
 import time
 
 import torch
-import torch.nn as nn
+from torch import nn
+from torch.optim import Adam
 
 from trainer import train_model
 from dataloader import WildfireDataLoaders, wildfire_transforms
 from wildfiredb import WildFireData1, WildFireData2, WildFireData3, WildFireData4
 from models import Resnet18Scratch, ResNet18PreTrained, NeuralNetworkScratch
 
-from torch.optim import Adam
 
 device = torch.accelerator.current_accelerator(
 ).type if torch.accelerator.is_available() else "cpu"

@@ -7,7 +7,7 @@ import torch
 
 from wildfiredb import WildFireData1
 from dataloader import WildfireDataLoaders, wildfire_transforms
-from models import WildfireModel
+from models import NeuralNetworkScratch
 
 
 device = torch.accelerator.current_accelerator(
@@ -15,7 +15,7 @@ device = torch.accelerator.current_accelerator(
 
 
 if __name__ == "__main__":
-    model = WildfireModel().to(device)
+    model = NeuralNetworkScratch().to(device)
     test_dl = WildfireDataLoaders(
         [WildFireData1()],
         wildfire_transforms
