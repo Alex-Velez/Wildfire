@@ -169,19 +169,37 @@ wildfire_data_2: WildFireData2 = WildFireData2()
 wildfire_data_3: WildFireData3 = WildFireData3()
 wildfire_data_4: WildFireData4 = WildFireData4()
 
-dataframe_partials: list[list[DataFrame]] = [
-    wildfire_data_1.generate_dataframes(),
-    # wildfire_data_2.generate_dataframes(),
-    # wildfire_data_3.generate_dataframes(),
-    # wildfire_data_4.generate_dataframes(),
-]
+# normalize per band to [0, 255]
+def norm(x):
+    x = x.astype(numpy.float32)
+    x -= x.min()
+    x /= (x.max() - x.min() + 1e-6)
+    return (x * 255).astype(numpy.uint8)
 
-dataframe_train_partials: list[DataFrame] = [dataframe_partial[0] for dataframe_partial in dataframe_partials]
-dataframe_test_partials: list[DataFrame] = [dataframe_partial[1] for dataframe_partial in dataframe_partials]
-dataframe_valid_partials: list[DataFrame] = [dataframe_partial[2] for dataframe_partial in dataframe_partials]
-
+def reconstruct_npz(file_path: Path) -> Image.Image | None:
+    if file_path.is_file():
+        with numpy.load(file_path) as npz_data: # image, aerosol, label
+            image_label_data = npz_data["image"]
+            # select RGB bands (B4, B3, B2)
+            red = image_label_data[3]
+            green = image_label_data[2]
+            blue = image_label_data[1]                
+            rgb = numpy.stack([red, green, blue], axis=-1)
+            rgb = numpy.dstack([norm(red), norm(green), norm(blue)])
+            return Image.fromarray(rgb)
 
 if __name__ == "__main__":
+
+    dataframe_partials: list[list[DataFrame]] = [
+        wildfire_data_1.generate_dataframes(),
+        # wildfire_data_2.generate_dataframes(),
+        # wildfire_data_3.generate_dataframes(),
+        # wildfire_data_4.generate_dataframes(),
+    ]
+
+    dataframe_train_partials: list[DataFrame] = [dataframe_partial[0] for dataframe_partial in dataframe_partials]
+    dataframe_test_partials: list[DataFrame] = [dataframe_partial[1] for dataframe_partial in dataframe_partials]
+    dataframe_valid_partials: list[DataFrame] = [dataframe_partial[2] for dataframe_partial in dataframe_partials]
 
 
     dataframe_train: DataFrame = pandas.concat(dataframe_train_partials, ignore_index=True)
@@ -213,23 +231,5 @@ if __name__ == "__main__":
     # print(info_table)
 
 
-    # normalize per band to [0, 255]
-    def norm(x):
-        x = x.astype(numpy.float32)
-        x -= x.min()
-        x /= (x.max() - x.min() + 1e-6)
-        return (x * 255).astype(numpy.uint8)
-
-    def reconstruct_npz(file_path: Path) -> Image.Image | None:
-        if file_path.is_file():
-            with numpy.load(file_path) as npz_data: # image, aerosol, label
-                image_label_data = npz_data["image"]
-                # select RGB bands (B4, B3, B2)
-                red = image_label_data[3]
-                green = image_label_data[2]
-                blue = image_label_data[1]                
-                rgb = numpy.stack([red, green, blue], axis=-1)
-                rgb = numpy.dstack([norm(red), norm(green), norm(blue)])
-                return Image.fromarray(rgb)
 
 
