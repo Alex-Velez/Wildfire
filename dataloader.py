@@ -70,7 +70,11 @@ class DatasetWildfire(Dataset):
             img_tensor = v2.Compose(
                 [v2.ToImage(), v2.ToDtype(torch.float32, scale=True)])(image)
         else:
-            img_tensor = decode_image(img_file)
+            try:
+                img_tensor = decode_image(img_file)
+            except RuntimeError as e:
+                print(f"Error decoding image {img_file}: {e}")
+                raise e
         label_str = self.dataframe.iloc[idx]['Class']
         label = self.class_to_idx[label_str]  # convert to integer
 

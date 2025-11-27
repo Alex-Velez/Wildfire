@@ -7,18 +7,22 @@ from torch.optim import Adam
 from trainer import train_model
 from dataloader import WildfireDataLoaders, wildfire_transforms
 from wildfiredb import WildFireData1, WildFireData2, WildFireData3, WildFireData4
-from models import Resnet18Scratch, ResNet18PreTrained, NeuralNetworkScratch
+from models import WildfireModel, Resnet18Scratch, ResNet18PreTrained, FullyConnectedNetwork
 
 
-device = torch.accelerator.current_accelerator(
-).type if torch.accelerator.is_available() else "cpu"
-
-
-def training_runs(models, dataloaders, loss_function, epochs, optimizers, device):
+def training_runs(
+    models_to_train: list[WildfireModel],
+    dataloaders_to_train: list[WildfireDataLoaders],
+    loss_function,
+    optimizer,
+    learning_rate: float = 0.0001,
+    epochs: int = 5,
+    device: str = "cpu",
+):
     """Trains each model on each dataset and returns the results of each
 
     Args:
-        models (_type_): _description_
+        models (WildfireModel): Wildfire model class
         dataloaders (_type_): _description_
         loss_function (_type_): _description_
         epochs (_type_): _description_
@@ -26,43 +30,56 @@ def training_runs(models, dataloaders, loss_function, epochs, optimizers, device
         device (_type_): _description_
     """
 
-    for model in models:
-        for (train_dataloader, valid_dataloader) in dataloaders:
+    for model in models_to_train:
+        for dataloader in dataloaders_to_train:
+            train_dataloader = dataloader.train_dl
+            valid_dataloader = dataloader.valid_dl
+            model.source_name = train_dataloader.dataset.source
             print(
                 f"Training model {model} on dataset from {train_dataloader.dataset.source}")
+            model = model.to(device)
             train_model(
                 model,
                 train_dataloader=train_dataloader,
                 valid_dataloader=valid_dataloader,
                 loss_function=loss_function,
                 epochs=epochs,
-                optimizer=optimizers[model],
+                optimizer=optimizer(model.parameters(), lr=learning_rate),
                 device=device
             )
 
 
-wildfire_dl = WildfireDataLoaders(
-    [WildFireData1()],
-    wildfire_transforms
-)
-j22_train_dl, j22_valid_dl = wildfire_dl.train_dl, wildfire_dl.valid_dl
-print("Training on a dataset of length:", len(j22_train_dl.dataset))
-print("Validating on a dataset of length:", len(j22_valid_dl.dataset))
+if __name__ == "__main__":
+    device = torch.accelerator.current_accelerator(
+    ).type if torch.accelerator.is_available() else "cpu"
 
-# training hyperparameters
-epochs = 10
-learning_rate = 0.0001
-wf_model = ResNet18PreTrained(j22_train_dl.dataset.source).to(device)
-print(f"Starting training on {wf_model}...")
-tic = time.time()
-train_model(
-    wf_model,
-    train_dataloader=j22_train_dl,
-    valid_dataloader=j22_valid_dl,
-    loss_function=nn.CrossEntropyLoss(),
-    optimizer=Adam(wf_model.parameters(), lr=learning_rate),
-    device=device,
-    epochs=epochs,
-)
-toc = time.time()
-print(f"Training complete in {toc - tic} seconds.")
+    # training hyperparameters
+    epochs = 5
+    learning_rate = 0.0001
+    loss_function = nn.CrossEntropyLoss()
+    optimizer = Adam  # optimized must be initialized per model
+
+    # prepare dataloaders
+    wildfire_dl = [
+        # training on one dataset
+        WildfireDataLoaders([WildFireData4()], wildfire_transforms),
+        # training on a combination of datasets
+        WildfireDataLoaders([WildFireData1(), WildFireData2()], wildfire_transforms),
+        # # training on all datasets
+        WildfireDataLoaders([WildFireData1(), WildFireData2(),
+                             WildFireData3(), WildFireData4()], wildfire_transforms),]
+
+    # models to train
+    models = [
+        FullyConnectedNetwork(),
+        Resnet18Scratch(),
+        ResNet18PreTrained(),]
+
+    training_runs(
+        models,
+        wildfire_dl,
+        loss_function,
+        epochs=epochs,
+        optimizer=optimizer,
+        device=device
+    )
