@@ -1,3 +1,4 @@
 .vscode/
 data/
 *.pyc
+model_params/

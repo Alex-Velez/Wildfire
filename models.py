@@ -1,59 +1,69 @@
+"""Contains the models available for training.
+
+"""
 from torch import nn
 from torchvision.models import resnet18, ResNet18_Weights
 
 
-class ResNet18PreTrained(nn.Module):
-    def __init__(self, dataset_source: str = ""):
+class WildfireModel(nn.Module):
+    """Base class for Wildfire Models
+
+    Args:
+        nn (_type_): _description_
+    """
+
+    def __init__(self, source_name: str = ""):
+        super().__init__()
+        self.model: nn.Module = None
+        self.class_names = ["fire", "nofire"]
+        self.source_name = source_name
+
+    def decode_labels(self, indices):
+        if isinstance(indices, int):
+            return self.class_names[indices]
+        return [self.class_names[i] for i in indices]
+
+    def forward(self, x):
+        y_pred = self.model(x)  # type: ignore
+        return y_pred.argmax(dim=1)  # prediction with highest score
+
+    def __str__(self):
+        return self.model_name + "_" + self.source_name
+
+
+class ResNet18PreTrained(WildfireModel):
+    def __init__(self, source_name: str = ""):
         super().__init__()
         self.model = resnet18(weights=ResNet18_Weights.IMAGENET1K_V1)
-        self.class_names = ["fire", "nofire"]
         # modify the final layer to have two classes
         self.model.fc = nn.Linear(
             self.model.fc.in_features, len(self.class_names))
-        self.dataset_source = dataset_source
+        self.model_name = "resnet18pretrained"
 
-    def decode_labels(self, indices):
-        if isinstance(indices, int):
-            return self.class_names[indices]
-        return [self.class_names[i] for i in indices]
-
-    def forward(self, x):
-        y_pred = self.model(x)
-        return y_pred.argmax(dim=1)  # prediction with highest score
-
-    def __str__(self):
-        return "resnet18finetuned_" + self.dataset_source
+        self.class_names = ["fire", "nofire"]
+        self.source_name = source_name
 
 
-class Resnet18Scratch(nn.Module):
-    def __init__(self, dataset_source: str = ""):
+class Resnet18Scratch(WildfireModel):
+    def __init__(self, source_name: str = ""):
         super().__init__()
         self.model = resnet18(weights=None)
-        self.class_names = ["fire", "nofire"]
         # modify the final layer to have two classes
         self.model.fc = nn.Linear(
             self.model.fc.in_features, len(self.class_names))
-        self.dataset_source = dataset_source
+        self.model_name = "resnet18scratch"
+        self.class_names = ["fire", "nofire"]
+        self.source_name = source_name
 
-    def decode_labels(self, indices):
-        if isinstance(indices, int):
-            return self.class_names[indices]
-        return [self.class_names[i] for i in indices]
 
-    def forward(self, x):
-        y_pred = self.model(x)
-        return y_pred.argmax(dim=1)  # prediction with highest score
-
-    def __str__(self):
-        return "resnet18scratch_" + self.dataset_source
-
-class NeuralNetwork(nn.Module):
+class _NeuralNetwork(nn.Module):
     """Fully connected Neural Network from Pytorch tutorial
     https://docs.pytorch.org/tutorials/beginner/basics/buildmodel_tutorial.html
 
     Args:
         nn (_type_): _description_
     """
+
     def __init__(self):
         super().__init__()
         self.flatten = nn.Flatten()
@@ -69,31 +79,17 @@ class NeuralNetwork(nn.Module):
         x = self.flatten(x)
         logits = self.linear_relu_stack(x)
         return logits
-    
 
-class NeuralNetworkScratch(nn.Module):
-    def __init__(self, dataset_source: str = ""):
+
+class FullyConnectedNetwork(WildfireModel):
+    def __init__(self, source_name: str = ""):
         super().__init__()
-        self.model = NeuralNetwork()
+        self.model = _NeuralNetwork()
+        self.model_name = "fullyconnectednetwork"
         self.class_names = ["fire", "nofire"]
-        # modify the final layer to have two classes
-        # self.model.fc = nn.Linear(
-        #     self.model.fc.in_features, len(self.class_names))
-        self.dataset_source = dataset_source
-
-    def decode_labels(self, indices):
-        if isinstance(indices, int):
-            return self.class_names[indices]
-        return [self.class_names[i] for i in indices]
-
-    def forward(self, x):
-        y_pred = self.model(x)
-        return y_pred.argmax(dim=1)  # prediction with highest score
-
-    def __str__(self):
-        return "neuralnetworkscratch_" + self.dataset_source
+        self.source_name = source_name
 
 
 if __name__ == "__main__":
-    model = NeuralNetworkScratch()
-    print(model)
+    model = FullyConnectedNetwork()
+    print(model.model)
