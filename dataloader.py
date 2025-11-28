@@ -24,6 +24,8 @@ wildfire_transforms = v2.Compose([
     v2.Normalize(mean=[0.485, 0.456, 0.406],
                  std=[0.229, 0.224, 0.225]),  # ImageNet stats
 ])
+wildfire_npz_transforms = v2.Compose(
+                [v2.ToImage(), v2.ToDtype(torch.float32, scale=True)])
 de_wildfire_transforms = v2.Compose([
     v2.Normalize(
         mean=[-0.485 / 0.229, -0.456 / 0.224, -0.406 / 0.225],
@@ -67,8 +69,7 @@ class DatasetWildfire(Dataset):
         img_file = os.path.dirname(os.path.abspath(__file__)) / img_file
         if img_file.suffix == ".npz":
             image = reconstruct_npz(img_file)
-            img_tensor = v2.Compose(
-                [v2.ToImage(), v2.ToDtype(torch.float32, scale=True)])(image)
+            img_tensor = wildfire_npz_transforms(image)
         else:
             try:
                 img_tensor = decode_image(img_file)

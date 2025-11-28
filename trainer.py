@@ -86,8 +86,10 @@ def validate(model, dataloader, loss_function, device):
     return validation_loss, validation_accuracy
 
 
-def train_model(model, train_dataloader, valid_dataloader, loss_function, optimizer, device, epochs=1) -> list[str]:
-    """Controls the training and validation process."""
+def train_model(model, train_dataloader, valid_dataloader, loss_function, optimizer, device, epochs=1, early_stopping=True) -> list[str]:
+    """Controls the training and validation process and saves the best model parameters.
+    
+    Returns the training and validation losses and accuracies for each epoch."""
     best_valid_acc = 0.0
     previous_valid_acc = 0.0
 
@@ -119,13 +121,14 @@ def train_model(model, train_dataloader, valid_dataloader, loss_function, optimi
             print("Best model saved.")
 
         # early stopping condition
-        if valid_acc > 0.9999:
-            print("Early stopping triggered, validation accuracy reached ~100%.")
-            break
+        if early_stopping:
+            if valid_acc > 0.9999:
+                print("Early stopping triggered, validation accuracy reached ~100%.")
+                break
 
-        if (valid_acc - previous_valid_acc) < 0.001:
-            print(
-                "Early stopping triggered, validation accuracy stopped increasing (significantly).")
-            break
+            if (valid_acc - previous_valid_acc) < 0.001:
+                print(
+                    "Early stopping triggered, validation accuracy stopped increasing (significantly).")
+                break
 
         previous_valid_acc = valid_acc

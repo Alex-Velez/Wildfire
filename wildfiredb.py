@@ -164,10 +164,6 @@ class WildFireData4():
             dataframe_15_2,
         ]
 
-wildfire_data_1: WildFireData1 = WildFireData1()
-wildfire_data_2: WildFireData2 = WildFireData2()
-wildfire_data_3: WildFireData3 = WildFireData3()
-wildfire_data_4: WildFireData4 = WildFireData4()
 
 # normalize per band to [0, 255]
 def norm(x):
@@ -189,6 +185,10 @@ def reconstruct_npz(file_path: Path) -> Image.Image | None:
             return Image.fromarray(rgb)
 
 if __name__ == "__main__":
+    wildfire_data_1: WildFireData1 = WildFireData1()
+    wildfire_data_2: WildFireData2 = WildFireData2()
+    wildfire_data_3: WildFireData3 = WildFireData3()
+    wildfire_data_4: WildFireData4 = WildFireData4()
 
     dataframe_partials: list[list[DataFrame]] = [
         wildfire_data_1.generate_dataframes(),

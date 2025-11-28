@@ -34,18 +34,19 @@ def training_runs(
         for dataloader in dataloaders_to_train:
             train_dataloader = dataloader.train_dl
             valid_dataloader = dataloader.valid_dl
-            model.source_name = train_dataloader.dataset.source
+            
+            model_to_train = model(source_name=train_dataloader.dataset.source).to(device)
             print(
-                f"Training model {model} on dataset from {train_dataloader.dataset.source}")
-            model = model.to(device)
+                f"Training model {model_to_train} on dataset from {train_dataloader.dataset.source}")
             train_model(
-                model,
+                model_to_train,
                 train_dataloader=train_dataloader,
                 valid_dataloader=valid_dataloader,
                 loss_function=loss_function,
                 epochs=epochs,
-                optimizer=optimizer(model.parameters(), lr=learning_rate),
-                device=device
+                optimizer=optimizer(model_to_train.parameters(), lr=learning_rate),
+                device=device,
+                early_stopping=False
             )
 
 
@@ -54,7 +55,7 @@ if __name__ == "__main__":
     ).type if torch.accelerator.is_available() else "cpu"
 
     # training hyperparameters
-    epochs = 5
+    epochs = 10
     learning_rate = 0.0001
     loss_function = nn.CrossEntropyLoss()
     optimizer = Adam  # optimized must be initialized per model
@@ -62,19 +63,19 @@ if __name__ == "__main__":
     # prepare dataloaders
     wildfire_dl = [
         # training on one dataset
-        WildfireDataLoaders([WildFireData4()], wildfire_transforms),
+        WildfireDataLoaders([WildFireData1()], wildfire_transforms),
         # training on a combination of datasets
-        WildfireDataLoaders([WildFireData1(), WildFireData2()], wildfire_transforms),
+        WildfireDataLoaders([WildFireData1(), WildFireData4()], wildfire_transforms),
         # # training on all datasets
-        WildfireDataLoaders([WildFireData1(), WildFireData2(),
-                             WildFireData3(), WildFireData4()], wildfire_transforms),]
-
+        # WildfireDataLoaders([WildFireData1(), WildFireData2(),
+        #                      WildFireData3(), WildFireData4()], wildfire_transforms),
+        ]
     # models to train
     models = [
-        FullyConnectedNetwork(),
-        Resnet18Scratch(),
-        ResNet18PreTrained(),]
-
+        FullyConnectedNetwork,
+        Resnet18Scratch,
+        # ResNet18PreTrained(),
+    ]
     training_runs(
         models,
         wildfire_dl,

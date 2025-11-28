@@ -22,11 +22,7 @@ class WildfireModel(nn.Module):
         if isinstance(indices, int):
             return self.class_names[indices]
         return [self.class_names[i] for i in indices]
-
-    def forward(self, x):
-        y_pred = self.model(x)  # type: ignore
-        return y_pred.argmax(dim=1)  # prediction with highest score
-
+    
     def __str__(self):
         return self.model_name + "_" + self.source_name
 
@@ -39,8 +35,6 @@ class ResNet18PreTrained(WildfireModel):
         self.model.fc = nn.Linear(
             self.model.fc.in_features, len(self.class_names))
         self.model_name = "resnet18pretrained"
-
-        self.class_names = ["fire", "nofire"]
         self.source_name = source_name
 
 
@@ -52,7 +46,6 @@ class Resnet18Scratch(WildfireModel):
         self.model.fc = nn.Linear(
             self.model.fc.in_features, len(self.class_names))
         self.model_name = "resnet18scratch"
-        self.class_names = ["fire", "nofire"]
         self.source_name = source_name
 
 
@@ -86,7 +79,6 @@ class FullyConnectedNetwork(WildfireModel):
         super().__init__()
         self.model = _NeuralNetwork()
         self.model_name = "fullyconnectednetwork"
-        self.class_names = ["fire", "nofire"]
         self.source_name = source_name
 
 
