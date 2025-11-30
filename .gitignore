@@ -1,8 +1,9 @@
 .vscode/
-data/
+data/*
 !data/data.md
 *.pyc
 model_params/
+parameters/*
 archive/
 __pycache__/
 *.pth
