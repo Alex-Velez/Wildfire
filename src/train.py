@@ -1,10 +1,9 @@
-"""Trains a model given a training and validation dataloader, los function and optimizer.
-    
-TODO: Decide how to record and show training results.
-"""
-import os
 import torch
-from tqdm import tqdm
+import tqdm
+
+import model.custom
+import data_loader
+import paths
 
 
 def train_epoch(model, dataloader, loss_function, optimizer, device):
@@ -14,7 +13,7 @@ def train_epoch(model, dataloader, loss_function, optimizer, device):
         model (nn.Module): Model to perform training on
         dataloader (_type_): Training data as torch dataloader
         loss_function (_type_): Loss function
-        optimizer (_type_): Optimzation Algorithm to use for weight update
+        optimizer (_type_): Optimization Algorithm to use for weight update
         device (_type_): Device to run on
 
     Returns:
@@ -23,10 +22,10 @@ def train_epoch(model, dataloader, loss_function, optimizer, device):
     model.train()  # set model to training mode
 
     total_loss = 0.0
-    correct_preds = 0
+    correct_predictions = 0
     total = 0
 
-    for images, labels in tqdm(dataloader):
+    for images, labels in tqdm.tqdm(dataloader):
         images, true_labels = images.to(device), labels.to(device)
 
         # forward pass
@@ -41,11 +40,11 @@ def train_epoch(model, dataloader, loss_function, optimizer, device):
         # track progress
         total_loss += loss.item() * images.size(0)
         pred_labels = outputs.argmax(dim=1)
-        correct_preds += (pred_labels == true_labels).sum().item()
+        correct_predictions += (pred_labels == true_labels).sum().item()
         total += images.size(0)
 
     avg_loss = total_loss / total
-    accuracy = correct_preds / total
+    accuracy = correct_predictions / total
     return avg_loss, accuracy
 
 
@@ -64,29 +63,29 @@ def validate(model, dataloader, loss_function, device):
     # set the model to eval mode
     model.eval()
     total_loss = 0.0
-    correct_preds = 0
-    total_preds = 0
+    correct_predictions = 0
+    total_predictions = 0
 
-    for images, labels in tqdm(dataloader):
+    for images, labels in tqdm.tqdm(dataloader):
         images, true_labels = images.to(device), labels.to(device)
 
-        # calculte loss
+        # calculate loss
         pred_outputs = model.model(images)
         loss = loss_function(pred_outputs, true_labels)
 
         # required since last batch may not be same size
         total_loss += loss.item() * images.size(0)
         pred_labels = pred_outputs.argmax(dim=1)
-        correct_preds += (pred_labels == true_labels).sum().item()
-        total_preds += images.size(0)
+        correct_predictions += (pred_labels == true_labels).sum().item()
+        total_predictions += images.size(0)
 
-    validation_loss = total_loss / total_preds
-    validation_accuracy = correct_preds / total_preds
+    validation_loss = total_loss / total_predictions
+    validation_accuracy = correct_predictions / total_predictions
 
     return validation_loss, validation_accuracy
 
 
-def train_model(model, train_dataloader, valid_dataloader, loss_function, optimizer, device, epochs=1) -> list[str]:
+def train_model(model, train_dataloader, valid_dataloader, loss_function, optimizer, device, epochs=1):
     """Controls the training and validation process."""
     best_valid_acc = 0.0
     previous_valid_acc = 0.0
@@ -113,10 +112,9 @@ def train_model(model, train_dataloader, valid_dataloader, loss_function, optimi
         if valid_acc > best_valid_acc:
             best_valid_acc = valid_acc
 
-            params_dir = "model_params/"
-            params_path = os.path.dirname(__file__) + "/" + params_dir
-            torch.save(model.state_dict(), f"{params_path}{model}.pth")
+            torch.save(model.state_dict(), paths.PARAMS_DIR / f"{model}.pth")
             print("Best model saved.")
+            
 
         # early stopping condition
         if valid_acc > 0.9999:
@@ -129,3 +127,42 @@ def train_model(model, train_dataloader, valid_dataloader, loss_function, optimi
             break
 
         previous_valid_acc = valid_acc
+
+
+def training_runs(
+    models_to_train: list[model.custom.WildfireModel],
+    dataloaders_to_train: list[data_loader.WildfireDataLoaders],
+    loss_function,
+    optimizer,
+    learning_rate: float = 0.0001,
+    epochs: int = 5,
+    device: str = "cpu",
+):
+    """Trains each model on each dataset and returns the results of each
+
+    Args:
+        models (WildfireModel): Wildfire model class
+        dataloaders (_type_): _description_
+        loss_function (_type_): _description_
+        epochs (_type_): _description_
+        optimizers (_type_): _description_
+        device (_type_): _description_
+    """
+
+    for model in models_to_train:
+        for dataloader in dataloaders_to_train:
+            train_dataloader = dataloader.train_dl
+            valid_dataloader = dataloader.valid_dl
+            model.source_name = train_dataloader.dataset.source
+            print(f"Training model {model} on dataset from {train_dataloader.dataset.source}")
+            model = model.to(device)
+            train_model(
+                model,
+                train_dataloader=train_dataloader,
+                valid_dataloader=valid_dataloader,
+                loss_function=loss_function,
+                epochs=epochs,
+                optimizer=optimizer(model.parameters(), lr=learning_rate),
+                device=device
+            )
+
