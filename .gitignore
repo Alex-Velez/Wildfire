@@ -1,5 +1,6 @@
 .vscode/
 data/
+!data/data.md
 *.pyc
 model_params/
 archive/
