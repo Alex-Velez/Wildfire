@@ -3,3 +3,4 @@ data/
 *.pyc
 model_params/
 archive/
+__pycache__/
