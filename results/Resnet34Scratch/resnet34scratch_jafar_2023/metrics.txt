@@ -1,0 +1,25 @@
+Model: resnet34scratch
+Dataset: jafar_2023
+============================================================
+
+METRICS:
+accuracy: 0.8811
+precision: 0.8692
+recall: 0.9971
+f1_score: 0.9288
+precision_macro: 0.9243
+recall_macro: 0.7361
+f1_macro: 0.7843
+roc_auc: 0.9352
+avg_precision: 0.9796
+
+============================================================
+CLASSIFICATION REPORT:
+              precision    recall  f1-score   support
+
+        fire     0.9794    0.4750    0.6397       200
+      nofire     0.8692    0.9971    0.9288       700
+
+    accuracy                         0.8811       900
+   macro avg     0.9243    0.7361    0.7843       900
+weighted avg     0.8937    0.8811    0.8646       900
