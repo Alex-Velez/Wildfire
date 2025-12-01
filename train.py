@@ -2,12 +2,12 @@ import time
 
 import torch
 from torch import nn
-from torch.optim import Adam
+from torch.optim import Adam, SGD
 
 from trainer import train_model
 from dataloader import WildfireDataLoaders, wildfire_transforms
 from wildfiredb import WildFireData1, WildFireData2, WildFireData3, WildFireData4
-from models import WildfireModel, Resnet18Scratch, ResNet18PreTrained, FullyConnectedNetwork
+from models import WildfireModel, Resnet34Scratch, ResNet18PreTrained, FullyConnectedNetwork
 
 
 def training_runs(
@@ -55,27 +55,27 @@ if __name__ == "__main__":
     ).type if torch.accelerator.is_available() else "cpu"
 
     # training hyperparameters
-    epochs = 10
+    epochs = 5
     learning_rate = 0.0001
     loss_function = nn.CrossEntropyLoss()
-    optimizer = Adam  # optimized must be initialized per model
+    optimizer = SGD  # optimizer must be initialized per model
 
     # prepare dataloaders
     wildfire_dl = [
         # training on one dataset
         WildfireDataLoaders([WildFireData1()], wildfire_transforms),
-        # training on a combination of datasets
-        WildfireDataLoaders([WildFireData1(), WildFireData4()], wildfire_transforms),
         # # training on all datasets
         # WildfireDataLoaders([WildFireData1(), WildFireData2(),
         #                      WildFireData3(), WildFireData4()], wildfire_transforms),
         ]
-    # models to train
+    
+    # models to train, must be initialized per training run
     models = [
         FullyConnectedNetwork,
-        Resnet18Scratch,
-        # ResNet18PreTrained(),
+        Resnet34Scratch,
+        # ResNet18PreTrained,
     ]
+    
     training_runs(
         models,
         wildfire_dl,

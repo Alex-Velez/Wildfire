@@ -24,8 +24,14 @@ wildfire_transforms = v2.Compose([
     v2.Normalize(mean=[0.485, 0.456, 0.406],
                  std=[0.229, 0.224, 0.225]),  # ImageNet stats
 ])
-wildfire_npz_transforms = v2.Compose(
-                [v2.ToImage(), v2.ToDtype(torch.float32, scale=True)])
+wildfire_npz_transforms = v2.Compose([
+    v2.ToImage(),
+    v2.ToDtype(torch.float32, scale=True),
+    v2.Lambda(lambda img: img / 255.0),  # clamp values to [0, 1]
+    v2.Resize([224, 224]),
+    v2.Normalize(mean=[0.485, 0.456, 0.406],
+                std=[0.229, 0.224, 0.225])
+])
 de_wildfire_transforms = v2.Compose([
     v2.Normalize(
         mean=[-0.485 / 0.229, -0.456 / 0.224, -0.406 / 0.225],

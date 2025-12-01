@@ -2,7 +2,7 @@
 
 """
 from torch import nn
-from torchvision.models import resnet18, ResNet18_Weights
+from torchvision.models import resnet34, ResNet34_Weights
 
 
 class WildfireModel(nn.Module):
@@ -38,14 +38,14 @@ class ResNet18PreTrained(WildfireModel):
         self.source_name = source_name
 
 
-class Resnet18Scratch(WildfireModel):
+class Resnet34Scratch(WildfireModel):
     def __init__(self, source_name: str = ""):
         super().__init__()
-        self.model = resnet18(weights=None)
+        self.model = resnet34(weights=None)
         # modify the final layer to have two classes
         self.model.fc = nn.Linear(
             self.model.fc.in_features, len(self.class_names))
-        self.model_name = "resnet18scratch"
+        self.model_name = "resnet34scratch"
         self.source_name = source_name
 
 
@@ -83,5 +83,5 @@ class FullyConnectedNetwork(WildfireModel):
 
 
 if __name__ == "__main__":
-    model = FullyConnectedNetwork()
+    model = Resnet34Scratch()
     print(model.model)
