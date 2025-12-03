@@ -35,8 +35,8 @@ def train_epoch(model, dataloader, loss_function, optimizer, device):
         loss = loss_function(outputs, true_labels)
 
         # backward pass
-        loss.backward()
-        optimizer.step()
+        loss.backward()   # calculate gradients
+        optimizer.step()  # update weights
 
         # track progress
         total_loss += loss.item() * images.size(0)
@@ -74,10 +74,10 @@ def validate(model, dataloader, loss_function, device):
         pred_outputs = model.model(images)
         loss = loss_function(pred_outputs, true_labels)
 
-        # required since last batch may not be same size
         total_loss += loss.item() * images.size(0)
         pred_labels = pred_outputs.argmax(dim=1)
         correct_preds += (pred_labels == true_labels).sum().item()
+        # required since last batch may not be same size
         total_preds += images.size(0)
 
     validation_loss = total_loss / total_preds
@@ -95,8 +95,8 @@ def train_model(model, train_dataloader, valid_dataloader, loss_function, optimi
 
     # for visualization
     train_losses = []
-    valid_losses = []
     train_accuracies = []
+    valid_losses = []
     valid_accuracies = []
 
     for epoch in range(epochs):
@@ -105,11 +105,14 @@ def train_model(model, train_dataloader, valid_dataloader, loss_function, optimi
             model, train_dataloader, loss_function, optimizer, device)
         print(
             f"Training Loss: {train_loss:.4f}, Training Accuracy: {train_acc:.4f}")
-
+        train_losses.append(train_loss)
+        train_accuracies.append(train_acc)
         valid_loss, valid_acc = validate(
             model, valid_dataloader, loss_function, device)
         print(
             f"Validation Loss: {valid_loss:.4f}, Validation Accuracy: {valid_acc:.4f}")
+        valid_losses.append(valid_loss)
+        valid_accuracies.append(valid_acc)
 
         # save the best model
         if valid_acc > best_valid_acc:
@@ -132,3 +135,6 @@ def train_model(model, train_dataloader, valid_dataloader, loss_function, optimi
                 break
 
         previous_valid_acc = valid_acc
+
+    return train_losses, train_accuracies, valid_losses, valid_accuracies
+    
